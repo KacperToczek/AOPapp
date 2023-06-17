@@ -16,11 +16,13 @@ from django.contrib import messages
 from django.shortcuts import redirect
 from american_options import Underlying, Option
 from american_options.payoffs import *
+import os
 
+current_dir = os.path.dirname(os.path.abspath(__file__))
 
-underlying_dictionary_path = 'C:/Users/tocze/OneDrive/Dokumenty/studia/magisterka/semestr_4/IF2/Projekt 2/aplikacja/home/underlying_dictionary.pkl'
-option_dictionary_path = 'C:/Users/tocze/OneDrive/Dokumenty/studia/magisterka/semestr_4/IF2/Projekt 2/aplikacja/home/option_dictionary.pkl'
-price_dictionary_path = 'C:/Users/tocze/OneDrive/Dokumenty/studia/magisterka/semestr_4/IF2/Projekt 2/aplikacja/home/price_dictionary.pkl'
+underlying_dictionary_path = os.path.join(current_dir, 'underlying_dictionary.pkl')
+option_dictionary_path = os.path.join(current_dir, 'option_dictionary.pkl')
+price_dictionary_path = os.path.join(current_dir, 'price_dictionary.pkl')
 
 
 def home(request):
