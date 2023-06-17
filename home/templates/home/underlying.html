@@ -1,0 +1,156 @@
+{% extends "home/base.html" %}
+{% block content %}
+<div class="row">
+  <div class="col-md-5">
+    <div class="content-section">
+      <h4>Define the asset</h4>
+      <form method="post" action="{% url 'make_underlying' %}" name="underlying_form">
+        {% csrf_token %}
+
+        <div class="form-group">
+          <label for="asset_name">Name of the asset:</label>
+          <input type="text" id="asset_name" name="asset_name" class="form-control" value="">
+        </div>
+
+        <div class="form-group">
+          <label for="spot_price">Spot Price:</label>
+          <input type="number" min="0" step="any" id="spot_price" name="spot_price" class="form-control" value="100">
+        </div>
+
+        <div class="form-group">
+          <label for="risk_free_rate">Risk-Free Rate:</label>
+          <input type="number" min="0" max="1" step="any" id="risk_free_rate" name="risk_free_rate" class="form-control"
+                 value="0.07">
+        </div>
+
+        <h4>Calibrate the asset</h4>
+        <div class="form-group">
+          <label for="mode_select">Select the mode:</label>
+          <select id="mode_select" name="mode_select" class="form-control">
+            <option disabled selected value="">choose</option>
+            <option value="GBM">Geometric Brownian Motion</option>
+            <option value="RT_GBM">Random Tree GBM</option>
+            <option value="JD">Jump Diffusion</option>
+          </select>
+        </div>
+
+        <div id="volatility_input" style="display: none;" class="form-group">
+          <label for="volatility">Volatility:</label>
+          <input type="number" min="0" max="1" step="any" id="volatility" name="volatility" class="form-control"
+                 value="0.4">
+        </div>
+
+        <div id="vpy_input" style="display: none;" class="form-group">
+          <label for="vpy">Values per year:</label>
+          <input type="number" min="1" step="1" id="vpy" name="vpy" class="form-control" value="255">
+        </div>
+
+        <div id="time_steps_input" style="display: none;" class="form-group">
+          <label for="time_steps">Time steps:</label>
+          <input type="number" min="1" step="1" id="time_steps" name="time_steps" class="form-control" value="4">
+        </div>
+
+        <div id="successors_input" style="display: none;" class="form-group">
+          <label for="successors">Successors:</label>
+          <input type="number" min="1" step="1" id="successors" name="successors" class="form-control" value="3">
+        </div>
+
+        <div id="jump_intensity_input" style="display: none;" class="form-group">
+          <label for="jump_intensity">Jump intensity:</label>
+          <input type="number" min="0" id="jump_intensity" name="jump_intensity" class="form-control" value="1">
+        </div>
+
+        <div id="param_a_input" style="display: none;" class="form-group">
+          <label for="param_a">Parameter a:</label>
+          <input type="number" id="param_a" name="param_a" class="form-control" value="1">
+        </div>
+
+        <div id="param_b_input" style="display: none;" class="form-group">
+          <label for="param_b">Parameter b:</label>
+          <input type="number" min="0" id="param_b" name="param_b" class="form-control" value="1">
+        </div>
+
+        <script>
+          var modeSelect = document.getElementById('mode_select');
+          var volatilityInput = document.getElementById('volatility_input');
+          var vpyInput = document.getElementById('vpy_input');
+          var timeStepsInput = document.getElementById('time_steps_input');
+          var successorsInput = document.getElementById('successors_input');
+          var jumpIntensityInput = document.getElementById('jump_intensity_input');
+          var paramaInput = document.getElementById('param_a_input');
+          var parambInput = document.getElementById('param_b_input');
+
+          modeSelect.addEventListener('change', function() {
+            var selectedOption = modeSelect.value;
+
+            if (selectedOption === 'GBM') {
+              volatilityInput.style.display = 'block';
+              vpyInput.style.display = 'block';
+              timeStepsInput.style.display = 'none';
+              successorsInput.style.display = 'none';
+              jumpIntensityInput.style.display = 'none';
+              paramaInput.style.display = 'none';
+              parambInput.style.display = 'none';
+            } else if (selectedOption === 'RT_GBM') {
+              volatilityInput.style.display = 'block';
+              vpyInput.style.display = 'none';
+              timeStepsInput.style.display = 'block';
+              successorsInput.style.display = 'block';
+              jumpIntensityInput.style.display = 'none';
+              paramaInput.style.display = 'none';
+              parambInput.style.display = 'none';
+            } else if (selectedOption === 'JD') {
+              volatilityInput.style.display = 'block';
+              vpyInput.style.display = 'block';
+              timeStepsInput.style.display = 'none';
+              successorsInput.style.display = 'none';
+              jumpIntensityInput.style.display = 'block';
+              paramaInput.style.display = 'block';
+              parambInput.style.display = 'block';
+            } else {
+              volatilityInput.style.display = 'none';
+              vpyInput.style.display = 'none';
+              timeStepsInput.style.display = 'none';
+              successorsInput.style.display = 'none';
+              jumpIntensityInput.style.display = 'none';
+              paramaInput.style.display = 'none';
+              parambInput.style.display = 'none';
+            }
+          });
+        </script>
+        <button type="submit" name="underlying_button" value="underlying_form" class="btn btn-primary">
+            Add to database</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-md-7">
+    <div class="content-section">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th><h4>Asset</h4></th>
+                    <th><h4>Attributes</h4></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for field, value in data %}
+                <tr>
+                    <td>{{ field }}</td>
+                    <td>{{ value }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <form method="post" action="{% url 'clear_underlying_dictionary' %}">
+          {% csrf_token %}
+          <button type="submit" name="clear_underlying_dictionary" class="btn btn-primary">Clear the database</button>
+        </form>
+
+    </div>
+  </div>
+
+</div>
+
+{% endblock content %}

@@ -1,0 +1,469 @@
+{% extends "home/base.html" %}
+{% block content %}
+
+<div class="row">
+  <div class="col-md-5">
+    <div class="content-section">
+        <form  method="post" action="{% url 'make_option' %}" name="option_form">
+            <h4>Define the option</h4>
+            {% csrf_token %}
+
+            <div class="form-group">
+              <label for="option_name">Name of the option:</label>
+              <input type="text" id="option_name" name="option_name" class="form-control" value="">
+            </div>
+
+            <div class="form-group">
+              <label for="assets_number">Number of assets:</label>
+              <input type="number" min="0" step="1" id="assets_number" name="assets_number" class="form-control" value="0">
+            </div>
+
+            <div class="form-group"  id="assetCheckboxGroup">
+              <label>Select asset(s):</label>
+              {% for key, value in asset_choices %}
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="key_{{ forloop.counter }}" name="selected_keys"
+                         value="{{ key }}">
+                  <label class="form-check-label" for="key_{{ forloop.counter }}">{{ key }}</label>
+                </div>
+              {% endfor %}
+            </div>
+
+            <script>
+              document.addEventListener("DOMContentLoaded", function() {
+                var assetsNumberField = document.getElementById("assets_number");
+                var assetCheckboxes = document.querySelectorAll('[id^="key_"]');
+                var maxAllowedSelections = parseInt(assetsNumberField.value);
+
+                function updateCheckboxSelections() {
+                  var selectedAssets = Array.from(assetCheckboxes).filter(function(checkbox) {
+                    return checkbox.checked;
+                  });
+
+                  if (selectedAssets.length >= maxAllowedSelections) {
+                    Array.from(assetCheckboxes).forEach(function(checkbox) {
+                      if (!checkbox.checked) {
+                        checkbox.disabled = true;
+                      }
+                    });
+                  } else {
+                    Array.from(assetCheckboxes).forEach(function(checkbox) {
+                      checkbox.disabled = false;
+                    });
+                  }
+                }
+
+                assetsNumberField.addEventListener("change", function() {
+                  maxAllowedSelections = parseInt(assetsNumberField.value);
+                  updateCheckboxSelections();
+                });
+
+                Array.from(assetCheckboxes).forEach(function(checkbox) {
+                  checkbox.addEventListener("change", function() {
+                    updateCheckboxSelections();
+                  });
+                });
+
+                Array.from(assetCheckboxes).forEach(function(checkbox) {
+                  checkbox.disabled = true;
+                });
+              });
+            </script>
+
+            <div class="form-group dynamic-fields"></div>
+
+            <div class="form-group" id="payoff_select_1d" style="display: none;">
+              <label for="payoff_select1d">Payoff:</label>
+              <select id="payoff_select1d" name="payoff_select1d" class="form-control">
+                <option disabled selected value="">choose</option>
+                <option value="call">call</option>
+                <option value="put">put</option>
+                <option value="square_call">square call</option>
+                <option value="straddle">straddle</option>
+                <option value="bear_put">bear put</option>
+                <option value="bull_call">bull call</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="payoff_select_2d" style="display: none;">
+              <label for="payoff_select2d">Payoff:</label>
+              <select id="payoff_select2d" name="payoff_select2d" class="form-control">
+                <option disabled selected value="">choose</option>
+                <option value="spread">spread</option>
+                <option value="ratio_spread">ratio spread</option>
+                <option value="double_mixed">double mixed</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="payoff_select_3d" style="display: none;">
+              <label for="payoff_select3d">Payoff:</label>
+              <select id="payoff_select3d" name="payoff_select3d" class="form-control">
+                <option value="multiple_mixed" selected>multiple mixed</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="pd_select_1d" style="display: none;">
+              <label for="pd_select">Path dependent:</label>
+              <select id="pd_select" name="pd_select" class="form-control">
+                <option value="False" selected>No</option>
+                <option value="True">Yes</option>
+              </select>
+            </div>
+
+            <div id="pd_type_input" style="display: none;" class="form-group">
+              <label for="pd_type_select">Type of path dependent:</label>
+              <select id="pd_type_select" name="pd_type_select" class="form-control">
+                <option disabled selected value="">choose</option>
+                <option value="asian">asian</option>
+                <option value="asian_geom">asian geom</option>
+                <option value="asian strike">asian strike</option>
+                <option value="asian strike geom">asian strike geom</option>
+                <option value="lookback_min">lookback min</option>
+                <option value="lookback_max">lookback max</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="barrier_select_1d" style="display: none;">
+              <label for="barrier_select">Barrier:</label>
+              <select id="barrier_select" name="barrier_select" class="form-control">
+                <option value="False" selected>No</option>
+                <option value="True">Yes</option>
+              </select>
+            </div>
+
+            <div id="barrier_level_input" style="display: none;" class="form-group">
+              <label for="barrier_level">Level of barrier:</label>
+              <input type="number" min="0" step="any" id="barrier_level" name="barrier_level" class="form-control"
+                     value="0">
+            </div>
+
+            <div id="barrier_type_input" style="display: none;" class="form-group">
+              <label for="barrier_type_select">Type of barrier:</label>
+              <select id="barrier_type_select" name="barrier_type_select" class="form-control">
+                <option disabled selected value="">choose</option>
+                <option value="up-and-in">up-and-in</option>
+                <option value="up-and-out">up-and-out</option>
+                <option value="down-and-in">down-and-in</option>
+                <option value="down-and-out">down-and-out</option>
+              </select>
+            </div>
+
+            <div id="strike1d_input" class="form-group" style="display: none;">
+              <label for="strike1d">Strike:</label>
+              <input type="number" min="0" step="any" id="strike1d" name="strike1d" class="form-control" value="100">
+            </div>
+
+            <div id="strike_long_input" class="form-group" style="display: none;">
+              <label for="strike_long">Strike long:</label>
+              <input type="number" min="0" step="any" id="strike_long" name="strike_long" class="form-control" value="100">
+            </div>
+
+            <div id="strike_short_input" class="form-group" style="display: none;">
+              <label for="strike_short">Strike short:</label>
+              <input type="number" min="0" step="any" id="strike_short" name="strike_short" class="form-control" value="100">
+            </div>
+
+            <div id="asset1_weight_input" class="form-group" style="display: none;">
+              <label for="asset1_weight">First asset weight:</label>
+              <input type="number" min="0" step="any" id="asset1_weight" name="asset1_weight" class="form-control" value="1">
+            </div>
+
+            <div id="asset2_weight_input" class="form-group" style="display: none;">
+              <label for="asset2_weight">Second asset weight:</label>
+              <input type="number" min="0" step="any" id="asset2_weight" name="asset2_weight" class="form-control" value="1">
+            </div>
+
+            <div class="form-group" id="which_input" style="display: none;">
+              <label for="which">Maximal/minimal payoff of all:</label>
+              <select id="which" name="which" class="form-control">
+                <option disabled selected value="">choose</option>
+                <option value="max">max</option>
+                <option value="min">min</option>
+              </select>
+            </div>
+
+            <script>
+              function handleFormChange() {
+                var assetsNumber = document.getElementById('assets_number');
+                var payoffSelect_1d = document.getElementById('payoff_select_1d');
+                var payoffSelect_2d = document.getElementById('payoff_select_2d');
+                var payoffSelect_3d = document.getElementById('payoff_select_3d');
+
+                var payoffSelect1d = document.getElementById('payoff_select1d');
+                var payoffSelect2d = document.getElementById('payoff_select2d');
+                var payoffSelect3d = document.getElementById('payoff_select3d');
+
+                var pdSelect1d = document.getElementById('pd_select_1d');
+                var barrierSelect1d = document.getElementById('barrier_select_1d');
+                var pdSelect = document.getElementById('pd_select');
+                var pdTypeInput = document.getElementById('pd_type_input');
+                var barrierSelect = document.getElementById('barrier_select');
+                var barrierLevelInput = document.getElementById('barrier_level_input');
+                var barrierTypeInput = document.getElementById('barrier_type_input');
+                var num = parseInt(assetsNumber.value);
+
+                var strike1d = document.getElementById('strike1d_input');
+                var strikeLong = document.getElementById('strike_long_input');
+                var strikeShort = document.getElementById('strike_short_input');
+                var asset1Weight = document.getElementById('asset1_weight_input');
+                var asset2Weight = document.getElementById('asset2_weight_input');
+                var which = document.getElementById('which_input');
+
+                if (num === 1) {
+                  payoffSelect_1d.style.display = "block";
+                  pdSelect1d.style.display = "block";
+                  barrierSelect1d.style.display = "block";
+                  payoffSelect_2d.style.display = "none";
+                  payoffSelect_3d.style.display = "none";
+                  pdTypeInput.style.display = 'none';
+                  barrierLevelInput.style.display = 'none';
+                  barrierTypeInput.style.display = 'none';
+                  asset1Weight.style.display = 'none';
+                  asset2Weight.style.display = 'none';
+                  which.style.display = 'none';
+                } else if (num === 2) {
+                  payoffSelect_2d.style.display = "block";
+                  payoffSelect_1d.style.display = "none";
+                  payoffSelect_3d.style.display = "none";
+                  pdSelect1d.style.display = "none";
+                  barrierSelect1d.style.display = "none";
+                  pdTypeInput.style.display = 'none';
+                  barrierLevelInput.style.display = 'none';
+                  barrierTypeInput.style.display = 'none';
+                  strike1d.style.display = 'none';
+                  strikeLong.style.display = 'none';
+                  strikeShort.style.display = 'none';
+                  asset1Weight.style.display = 'none';
+                  asset2Weight.style.display = 'none';
+                  which.style.display = 'none';
+                } else if (num > 2) {
+                  payoffSelect_3d.style.display = "block";
+                  payoffSelect_1d.style.display = "none";
+                  payoffSelect_2d.style.display = "none";
+                  pdSelect1d.style.display = "none";
+                  barrierSelect1d.style.display = "none";
+                  pdTypeInput.style.display = 'none';
+                  barrierLevelInput.style.display = 'none';
+                  barrierTypeInput.style.display = 'none';
+                  strike1d.style.display = 'none';
+                  strikeLong.style.display = 'none';
+                  strikeShort.style.display = 'none';
+                  asset1Weight.style.display = 'none';
+                  asset2Weight.style.display = 'none';
+                  which.style.display = 'block';
+                } else {
+                  payoffSelect_1d.style.display = "none";
+                  payoffSelect_2d.style.display = "none";
+                  payoffSelect_3d.style.display = "none";
+                  pdSelect1d.style.display = "none";
+                  barrierSelect1d.style.display = "none";
+                  pdTypeInput.style.display = 'none';
+                  barrierLevelInput.style.display = 'none';
+                  barrierTypeInput.style.display = 'none';
+                  strike1d.style.display = 'none';
+                  strikeLong.style.display = 'none';
+                  strikeShort.style.display = 'none';
+                  asset1Weight.style.display = 'none';
+                  asset2Weight.style.display = 'none';
+                  which.style.display = 'none';
+                }
+
+                payoffSelect1d.addEventListener('change', function() {
+                  var selectedOption = payoffSelect1d.value;
+
+                  if (selectedOption === 'bear_put') {
+                    strike1d.style.display = 'none';
+                    strikeLong.style.display = 'block';
+                    strikeShort.style.display = 'block';
+                  } else if (selectedOption === 'bull_call') {
+                    strike1d.style.display = 'none';
+                    strikeLong.style.display = 'block';
+                    strikeShort.style.display = 'block';
+                  } else {
+                    strike1d.style.display = 'block';
+                    strikeLong.style.display = 'none';
+                    strikeShort.style.display = 'none';
+                  }
+                });
+
+                payoffSelect2d.addEventListener('change', function() {
+                  var selectedOption = payoffSelect2d.value;
+
+                  if (selectedOption === 'ratio_spread') {
+                    asset1Weight.style.display = 'block';
+                    asset2Weight.style.display = 'block';
+                    which.style.display = 'none';
+                  } else if (selectedOption === 'double_mixed') {
+                    which.style.display = 'block';
+                  } else {
+                    asset1Weight.style.display = 'none';
+                    asset2Weight.style.display = 'none';
+                    which.style.display = 'none';
+                  }
+                });
+
+                pdSelect.addEventListener('change', function() {
+                  var selectedOption = pdSelect.value;
+
+                  if (selectedOption === 'False') {
+                    pdTypeInput.style.display = 'none';
+                  } else if (selectedOption === 'True') {
+                    pdTypeInput.style.display = 'block';
+                  } else {
+                    pdTypeInput.style.display = 'none';
+                  }
+                });
+
+                barrierSelect.addEventListener('change', function() {
+                  var selectedOption = barrierSelect.value;
+
+                  if (selectedOption === 'False') {
+                    barrierLevelInput.style.display = 'none';
+                    barrierTypeInput.style.display = 'none';
+                  } else if (selectedOption === 'True') {
+                    barrierLevelInput.style.display = 'block';
+                    barrierTypeInput.style.display = 'block';
+                  } else {
+                    barrierLevelInput.style.display = 'none';
+                    barrierTypeInput.style.display = 'none';
+                  }
+                });
+              }
+
+              document.addEventListener('DOMContentLoaded', function() {
+                handleFormChange();
+
+                var assetsNumber = document.getElementById('assets_number');
+                assetsNumber.addEventListener('change', function() {
+                  handleFormChange();
+                });
+              });
+            </script>
+
+            <div id="strikeFields"></div>
+            <div id="selectFields"></div>
+            <script>
+              var assetsNumber = document.getElementById('assets_number');
+              var strikeFieldsContainer = document.getElementById('strikeFields');
+              var selectFieldsContainer = document.getElementById('selectFields');
+              var payoffSelected2D = document.getElementById('payoff_select2d');
+
+              assetsNumber.addEventListener('change', updateFields);
+              payoffSelected2D.addEventListener('change', updateFields);
+
+              function updateFields() {
+                var num = parseInt(assetsNumber.value);
+                var payoff = payoffSelected2D.value;
+
+                // Wyczyszczenie istniejących pól
+                strikeFieldsContainer.innerHTML = '';
+                selectFieldsContainer.innerHTML = '';
+
+                // Generowanie nowych pól dla num > 2 lub payoff === "double_mixed"
+                if (num > 2 || payoff === "double_mixed") {
+                  for (var i = 1; i <= num; i++) {
+                    // Pole dla strajku (strike)
+                    var strikeField = document.createElement('div');
+                    strikeField.className = 'form-group';
+                    strikeField.innerHTML = '<label for="strike' + i + '">Strike for Asset ' + i + ':</label>' +
+                                            '<input type="number" min="0" step="1" id="strike' + i + '" name="strike' + i + '" class="form-control" value="100">';
+
+                    strikeFieldsContainer.appendChild(strikeField);
+
+                    // Lista wyboru (select) dla call / put
+                    var selectField = document.createElement('div');
+                    selectField.className = 'form-group';
+                    selectField.innerHTML = '<label for="select' + i + '">Select for Asset ' + i + ':</label>' +
+                                            '<select id="select' + i + '" name="select' + i + '" class="form-control">' +
+                                              '<option value="call">Call</option>' +
+                                              '<option value="put">Put</option>' +
+                                            '</select>';
+
+                    selectFieldsContainer.appendChild(selectField);
+                  }
+                }
+              }
+            </script>
+
+<!--            <script>-->
+<!--              var assetsNumber = document.getElementById('assets_number');-->
+<!--              var strikeFieldsContainer = document.getElementById('strikeFields');-->
+<!--              var selectFieldsContainer = document.getElementById('selectFields');-->
+
+<!--              assetsNumber.addEventListener('change', function() {-->
+<!--                var num = parseInt(assetsNumber.value);-->
+
+<!--                // Wyczyszczenie istniejących pól-->
+<!--                strikeFieldsContainer.innerHTML = '';-->
+<!--                selectFieldsContainer.innerHTML = '';-->
+
+<!--                // Generowanie nowych pól dla num > 2-->
+<!--                if (num > 2) {-->
+<!--                  for (var i = 1; i <= num; i++) {-->
+<!--                    // Pole dla strajku (strike)-->
+<!--                    var strikeField = document.createElement('div');-->
+<!--                    strikeField.className = 'form-group';-->
+<!--                    strikeField.innerHTML = '<label for="strike' + i + '">Strike for Asset ' + i + ':</label>' +-->
+<!--                                            '<input type="number" min="0" step="1" id="strike' + i + '" name="strike' + i + '" class="form-control" value="100">';-->
+
+<!--                    strikeFieldsContainer.appendChild(strikeField);-->
+
+<!--                    // Lista wyboru (select) dla call / put-->
+<!--                    var selectField = document.createElement('div');-->
+<!--                    selectField.className = 'form-group';-->
+<!--                    selectField.innerHTML = '<label for="select' + i + '">Select for Asset ' + i + ':</label>' +-->
+<!--                                            '<select id="select' + i + '" name="select' + i + '" class="form-control">' +-->
+<!--                                              '<option value="call">Call</option>' +-->
+<!--                                              '<option value="put">Put</option>' +-->
+<!--                                            '</select>';-->
+
+<!--                    selectFieldsContainer.appendChild(selectField);-->
+<!--                  }-->
+<!--                }-->
+<!--              });-->
+<!--            </script>-->
+
+            <div class="form-group">
+              <label for="maturity">Maturity:</label>
+              <input type="number" min="0" step="any" id="maturity" name="maturity" class="form-control" value="1">
+            </div>
+
+        <button type="submit" name="option_button" value="option_form" class="btn btn-primary">Add to database</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-md-7">
+    <div class="content-section">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th><h4>Option</h4></th>
+                    <th><h4>Attributes</h4></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for field, value in data %}
+                <tr>
+                    <td>{{ field }}</td>
+                    <td>{{ value }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+
+        <form method="post" action="{% url 'clear_option_dictionary' %}">
+          {% csrf_token %}
+          <button type="submit" name="clear_option_dictionary" class="btn btn-primary">Clear the database</button>
+        </form>
+
+    </div>
+  </div>
+
+</div>
+
+
+
+
+{% endblock content %}
